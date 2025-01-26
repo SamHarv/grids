@@ -5,8 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '/firebase_options.dart';
-import '/controller/navigation/routes.dart';
-import '/controller/state_management/providers.dart';
+import 'logic/routes/routes.dart';
+import 'logic/providers/providers.dart';
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();

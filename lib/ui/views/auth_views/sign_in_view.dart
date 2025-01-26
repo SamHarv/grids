@@ -2,32 +2,25 @@ import 'package:beamer/beamer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:just_audio/just_audio.dart';
 
-import '/controller/constants/constants.dart';
-import '/controller/state_management/providers.dart';
+import '../../../config/constants.dart';
+import '../../../logic/providers/providers.dart';
 import '../../widgets/login_field_widget.dart';
 
-final _url = Uri.parse('https://oxygentech.com.au');
+class SignInView extends ConsumerStatefulWidget {
+  /// UI for signing in
 
-Future<void> _launchUrl() async {
-  if (!await launchUrl(_url)) {
-    throw 'Could not launch $_url';
-  }
-}
-
-class SignInPage extends ConsumerStatefulWidget {
-  const SignInPage({super.key});
+  const SignInView({super.key});
 
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() => _SignInPageState();
+  ConsumerState<ConsumerStatefulWidget> createState() => _SignInViewState();
 }
 
-class _SignInPageState extends ConsumerState<SignInPage> {
+class _SignInViewState extends ConsumerState<SignInView> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  late SharedPreferences _prefs;
+  late SharedPreferences _prefs; // for dark/ light mode
   late AudioPlayer clicker = AudioPlayer();
 
   @override
@@ -37,11 +30,13 @@ class _SignInPageState extends ConsumerState<SignInPage> {
     super.initState();
   }
 
+  /// Initialise shared preferences
   Future<void> _initSharedPreferences() async {
     _prefs = await SharedPreferences.getInstance();
     _loadDarkMode();
   }
 
+  /// Load dark/ light mode from shared preferences
   void _loadDarkMode() {
     final isDarkMode = _prefs.getBool('darkMode') ?? true;
     ref.read(darkMode.notifier).state = isDarkMode;
@@ -57,27 +52,11 @@ class _SignInPageState extends ConsumerState<SignInPage> {
 
   @override
   Widget build(BuildContext context) {
-    final mediaWidth = MediaQuery.of(context).size.width;
-    final auth = ref.read(firebaseAuth);
+    final mediaWidth = MediaQuery.sizeOf(context).width;
+    final auth = ref.read(authentication);
     final isDarkMode = ref.watch(darkMode);
     final logo = isDarkMode ? 'images/grids.png' : 'images/grids_light.png';
-
-    void showMessage(String message) {
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-            title: Center(
-              child: Text(
-                message,
-                style: isDarkMode ? darkLargeFont : lightLargeFont,
-              ),
-            ),
-          );
-        },
-      );
-    }
+    final urlLauncher = ref.read(url);
 
     return Scaffold(
       body: Center(
@@ -85,6 +64,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
+              // grids. logo
               Center(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(32),
@@ -103,14 +83,14 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                     hintText: 'Email',
                     mediaWidth: mediaWidth,
                   ),
-                  const SizedBox(height: 10),
+                  gapH10,
                   LoginFieldWidget(
                     textController: _passwordController,
                     obscurePassword: true,
                     hintText: 'Password',
                     mediaWidth: mediaWidth,
                   ),
-                  const SizedBox(height: 10),
+                  gapH10,
                   SizedBox(
                     width: mediaWidth * 0.8,
                     height: 60,
@@ -123,6 +103,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                       onPressed: () async {
                         await clicker.setAsset('assets/click.mov');
                         clicker.play();
+                        // Show loading dialog
                         showDialog(
                           // ignore: use_build_context_synchronously
                           context: context,
@@ -141,25 +122,29 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                             email: _emailController.text.trim(),
                             password: _passwordController.text.trim(),
                           );
+                          // Pop loading dialog
                           // ignore: use_build_context_synchronously
                           Navigator.pop(context);
-                          showMessage("User signed in!");
+                          // ignore: use_build_context_synchronously
+                          showMessage("User signed in!", context, isDarkMode);
 
                           // ignore: use_build_context_synchronously
                           Beamer.of(context).beamToNamed('/grids');
                         } catch (e) {
+                          // Pop loading dialog
                           // ignore: use_build_context_synchronously
                           Navigator.pop(context);
-                          showMessage(e.toString());
+                          // ignore: use_build_context_synchronously
+                          showMessage(e.toString(), context, isDarkMode);
                         }
                       },
                       child: Text(
                         'Sign In',
-                        style: isDarkMode ? lightFont : darkFont,
+                        style: isDarkMode ? lightModeFont : darkModeFont,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  gapH10,
                   TextButton(
                     onPressed: () async {
                       await clicker.setAsset('assets/click.mov');
@@ -169,10 +154,11 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                     },
                     child: Text(
                       'Sign Up',
-                      style: isDarkMode ? darkSmallFont : lightSmallFont,
+                      style:
+                          isDarkMode ? darkModeSmallFont : lightModeSmallFont,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  gapH10,
                   TextButton(
                     onPressed: () async {
                       await clicker.setAsset('assets/click.mov');
@@ -182,10 +168,12 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                     },
                     child: Text(
                       'Forgot Password',
-                      style: isDarkMode ? darkSmallFont : lightSmallFont,
+                      style:
+                          isDarkMode ? darkModeSmallFont : lightModeSmallFont,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  gapH10,
+                  // O2Tech logo to launch O2Tech website
                   Padding(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
@@ -201,11 +189,11 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                       onTap: () async {
                         await clicker.setAsset('assets/click.mov');
                         clicker.play();
-                        _launchUrl();
+                        urlLauncher.launchO2Tech();
                       },
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  gapH20,
                 ],
               ),
             ],

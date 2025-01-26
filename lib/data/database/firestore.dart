@@ -1,16 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../model/colour_conversions.dart';
-import '../model/grid_model.dart';
-import '../model/user_model.dart';
+import '../../logic/services/colour_conversion.dart';
+import '../models/grid_model.dart';
+import '../models/user_model.dart';
 
-class FirestoreService {
-  final CollectionReference _users =
-      FirebaseFirestore.instance.collection('users');
-  final colourConverter = ColourConversions();
+class Firestore {
+  /// Class to access [Firestore] database
 
-  // Create a user
+  final _users = FirebaseFirestore.instance.collection('users');
+  final colourConverter = ColourConversion();
+
+  /// Create a user
   Future<void> addUser({required UserModel user}) async {
     try {
       await _users.doc(user.id).set({
@@ -23,7 +24,7 @@ class FirestoreService {
     }
   }
 
-  // Get a user
+  /// Get a user
   Future<UserModel> getUser({required String userID}) async {
     try {
       final user = await _users.doc(userID).get();
@@ -37,7 +38,7 @@ class FirestoreService {
     }
   }
 
-  // Update user
+  /// Update user
   Future<void> updateUser({required UserModel user}) async {
     try {
       await _users.doc(user.id).update({
@@ -50,7 +51,7 @@ class FirestoreService {
     }
   }
 
-  // Delete user
+  /// Delete user
   Future<void> deleteUser({required String userID}) async {
     try {
       await _users.doc(userID).delete();
@@ -59,8 +60,8 @@ class FirestoreService {
     }
   }
 
-  // Create a grid
-  Future<void> addGrid({required GridModel grid}) async {
+  /// Create a grid
+  Future<void> addGrid({required Grid grid}) async {
     try {
       await _users
           .doc(FirebaseAuth.instance.currentUser!.uid)
@@ -82,15 +83,15 @@ class FirestoreService {
     }
   }
 
-  // Get a grid
-  Future<GridModel> getGrid({required String gridID}) async {
+  /// Get a grid
+  Future<Grid> getGrid({required String gridID}) async {
     try {
       final grid = await _users
           .doc(FirebaseAuth.instance.currentUser!.uid)
           .collection('grids')
           .doc(gridID)
           .get();
-      return GridModel(
+      return Grid(
         gridID: grid['gridID'],
         title: grid['title'],
         image: grid['image'],
@@ -106,8 +107,8 @@ class FirestoreService {
     }
   }
 
-  // Get grids
-  Future<List<GridModel>> getGrids() async {
+  /// Get all grids for current user
+  Future<List<Grid>> getGrids() async {
     try {
       final grids = await _users
           .doc(FirebaseAuth.instance.currentUser!.uid)
@@ -115,7 +116,7 @@ class FirestoreService {
           .orderBy('dateModified', descending: true)
           .get();
       return grids.docs
-          .map((grid) => GridModel(
+          .map((grid) => Grid(
                 gridID: grid['gridID'],
                 title: grid['title'],
                 image: grid['image'],
@@ -132,8 +133,8 @@ class FirestoreService {
     }
   }
 
-  // Update grid
-  Future<void> updateGrid({required GridModel grid}) async {
+  /// Update a grid
+  Future<void> updateGrid({required Grid grid}) async {
     try {
       await _users
           .doc(FirebaseAuth.instance.currentUser!.uid)
@@ -155,7 +156,7 @@ class FirestoreService {
     }
   }
 
-  // Delete grid
+  /// Delete a grid
   Future<void> deleteGrid({required String gridID}) async {
     try {
       await _users

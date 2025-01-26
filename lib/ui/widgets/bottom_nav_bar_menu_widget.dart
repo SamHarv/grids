@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '/controller/state_management/providers.dart';
+import '../../logic/providers/providers.dart';
 
 class BottomNavBarMenuWidget extends ConsumerStatefulWidget {
   final IconData icon;

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '/controller/constants/constants.dart';
-import '/controller/state_management/providers.dart';
+import '../../config/constants.dart';
+import '../../logic/providers/providers.dart';
 
 class CustomDialogWidget extends ConsumerWidget {
   final String dialogHeading;
@@ -23,7 +23,7 @@ class CustomDialogWidget extends ConsumerWidget {
     return AlertDialog(
       title: Text(
         dialogHeading,
-        style: isDarkMode ? darkLargeFont : lightLargeFont,
+        style: isDarkMode ? darkModeLargeFont : lightModeLargeFont,
       ),
       content: dialogContent,
       backgroundColor: isDarkMode ? Colors.black : Colors.white,

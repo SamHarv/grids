@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '/controller/constants/constants.dart';
+import '../../config/constants.dart';
 
-class ColourConversions {
+class ColourConversion {
+  /// Convert a colour to string or string to colour for storage
+
   String getStringFromColour(Color colour) {
     if (colour == blue) {
       return "blue";

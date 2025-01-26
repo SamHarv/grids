@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '/controller/constants/constants.dart';
-import '/controller/state_management/providers.dart';
+import '../../config/constants.dart';
+import '../../logic/providers/providers.dart';
 
 class LoginFieldWidget extends ConsumerWidget {
   final TextEditingController textController;
@@ -26,7 +26,7 @@ class LoginFieldWidget extends ConsumerWidget {
       width: mediaWidth * 0.8,
       height: 60,
       child: TextField(
-        style: isDarkMode ? darkFont : lightFont,
+        style: isDarkMode ? darkModeFont : lightModeFont,
         controller: textController,
         textInputAction: TextInputAction.next,
         obscureText: obscurePassword,

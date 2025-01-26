@@ -8,10 +8,10 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 import 'package:just_audio/just_audio.dart';
 
-import '/presentation/widgets/glass_morphism.dart';
-import '/controller/constants/constants.dart';
-import '/controller/state_management/providers.dart';
-import '/data/model/grid_model.dart';
+import '../widgets/glass_morphism.dart';
+import '../../config/constants.dart';
+import '../../logic/providers/providers.dart';
+import '../../data/models/grid_model.dart';
 
 final _url = Uri.parse('https://oxygentech.com.au');
 
@@ -66,7 +66,7 @@ class _GridsPageState extends ConsumerState<GridsPage>
     final isDarkMode = ref.watch(darkMode);
     final logo = isDarkMode ? 'images/grids.png' : 'images/grids_light.png';
 
-    Future<List<GridModel>> getGrids() async {
+    Future<List<Grid>> getGrids() async {
       final grids = await db.getGrids();
       return grids;
     }
@@ -186,7 +186,7 @@ class _GridsPageState extends ConsumerState<GridsPage>
                   // Solid text as fill.
                   Text(
                     "No Grids Found!",
-                    style: isDarkMode ? darkLargeFont : lightLargeFont,
+                    style: isDarkMode ? darkModeLargeFont : lightModeLargeFont,
                   ),
                 ],
               ),
@@ -308,7 +308,7 @@ class _GridsPageState extends ConsumerState<GridsPage>
           const uuid = Uuid();
           final gridID = uuid.v4();
           const colour = "black";
-          final newGrid = GridModel(
+          final newGrid = Grid(
             gridID: gridID,
             title: 'New Grid',
             dateModified: DateTime.now().toString(),

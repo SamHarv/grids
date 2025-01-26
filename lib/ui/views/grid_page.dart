@@ -3,16 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 
-import '/presentation/widgets/glass_morphism.dart';
-import '/controller/constants/constants.dart';
-import '/controller/state_management/providers.dart';
-import '/data/model/colour_conversions.dart';
-import '/data/model/grid_model.dart';
+import '../widgets/glass_morphism.dart';
+import '../../config/constants.dart';
+import '../../logic/providers/providers.dart';
+import '../../logic/services/colour_conversion.dart';
+import '../../data/models/grid_model.dart';
 import '../widgets/bottom_nav_bar_menu_widget.dart';
 import '../widgets/custom_dialog_widget.dart';
 
 class GridPage extends ConsumerStatefulWidget {
-  final GridModel grid;
+  /// Display a [grid] - called GridPage rather than GridView to avoid conflict
+  /// with Flutter's GridView
+
+  final Grid grid;
   final String gridID;
 
   const GridPage({super.key, required this.grid, required this.gridID});
@@ -24,11 +27,11 @@ class GridPage extends ConsumerStatefulWidget {
 class _NewGridPageState extends ConsumerState<GridPage> {
   late AudioPlayer pop = AudioPlayer();
   late AudioPlayer clicker = AudioPlayer();
-  late AudioPlayer bell = AudioPlayer();
   late AudioPlayer multiPopUp = AudioPlayer();
   late AudioPlayer multiPopDown = AudioPlayer();
   late AudioPlayer whoosh = AudioPlayer();
   late TextEditingController titleController;
+  final colourConverter = ColourConversion();
 
   late bool greenIsChecked;
   late bool redIsChecked;
@@ -42,7 +45,6 @@ class _NewGridPageState extends ConsumerState<GridPage> {
     super.initState();
     pop = AudioPlayer();
     clicker = AudioPlayer();
-    bell = AudioPlayer();
     multiPopUp = AudioPlayer();
     multiPopDown = AudioPlayer();
     whoosh = AudioPlayer();
@@ -52,7 +54,6 @@ class _NewGridPageState extends ConsumerState<GridPage> {
   void dispose() {
     pop.dispose();
     clicker.dispose();
-    bell.dispose();
     multiPopUp.dispose();
     multiPopDown.dispose();
     whoosh.dispose();
@@ -66,18 +67,21 @@ class _NewGridPageState extends ConsumerState<GridPage> {
     final isDarkMode = ref.watch(darkMode);
     final barIsBottom = ref.read(barBottom);
     titleController = TextEditingController(text: widget.grid.title);
-    final colourConverter = ColourConversions();
-    int count = ref.watch(xProvider) * ref.watch(yProvider);
+    int count =
+        ref.watch(xProvider) * ref.watch(yProvider); // total number of dots
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
+        // Back button
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           color: isDarkMode ? Colors.white : Colors.black,
+          // Ensure grid is saved
           onPressed: () async {
             await clicker.setAsset('assets/click.mov');
             clicker.play();
-            final updatedGrid = GridModel(
+            // Create updated grid object
+            final updatedGrid = Grid(
               gridID: widget.gridID,
               title: titleController.text,
               dateModified: DateTime.now().toString(),
@@ -87,26 +91,28 @@ class _NewGridPageState extends ConsumerState<GridPage> {
               shape: widget.grid.shape,
               gridValues: widget.grid.gridValues,
             );
+            // Update grid in Firestore
             await db.updateGrid(grid: updatedGrid);
             // ignore: use_build_context_synchronously
             Beamer.of(context).beamToNamed('/grids');
           },
         ),
+        // Grid title
         title: SizedBox(
           child: Align(
             alignment: Alignment.centerLeft,
             child: TextField(
               onChanged: (value) {
-                widget.grid.title = value;
+                widget.grid.title = value; // update grid title
               },
               showCursor: true,
               maxLines: 1,
               minLines: 1,
               controller: titleController,
-              style: isDarkMode ? darkLargeFont : lightLargeFont,
+              style: isDarkMode ? darkModeLargeFont : lightModeLargeFont,
               decoration: InputDecoration(
                 hintText: widget.grid.title,
-                hintStyle: isDarkMode ? darkLargeFont : lightLargeFont,
+                hintStyle: isDarkMode ? darkModeLargeFont : lightModeLargeFont,
                 border: InputBorder.none,
               ),
               textCapitalization: TextCapitalization.sentences,
@@ -114,14 +120,14 @@ class _NewGridPageState extends ConsumerState<GridPage> {
           ),
         ),
         actions: [
+          // Delete grid
           IconButton(
-            icon: const Icon(
-              Icons.delete,
-            ),
+            icon: const Icon(Icons.delete),
             color: isDarkMode ? white : black,
             onPressed: () async {
               await clicker.setAsset('assets/click.mov');
               await clicker.play();
+              // Show delete confirmation dialog
               showDialog(
                 // ignore: use_build_context_synchronously
                 context: context,
@@ -130,9 +136,10 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                     dialogHeading: 'Delete Grid',
                     dialogContent: Text(
                       'Are you sure you want to delete this grid?',
-                      style: isDarkMode ? darkFont : lightFont,
+                      style: isDarkMode ? darkModeFont : lightModeFont,
                     ),
                     dialogActions: [
+                      // Cancel deletion
                       TextButton(
                         onPressed: () async {
                           await clicker.setAsset('assets/click.mov');
@@ -142,20 +149,22 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                         },
                         child: Text(
                           "Cancel",
-                          style: isDarkMode ? darkFont : lightFont,
+                          style: isDarkMode ? darkModeFont : lightModeFont,
                         ),
                       ),
+                      // Confirm deletion
                       TextButton(
                         onPressed: () async {
                           await whoosh.setAsset('assets/whoosh.mov');
                           whoosh.play();
+                          // Delete grid from Firestore
                           await db.deleteGrid(gridID: widget.gridID);
                           // ignore: use_build_context_synchronously
                           Beamer.of(context).beamToNamed('/grids');
                         },
                         child: Text(
                           "Delete",
-                          style: isDarkMode ? darkFont : lightFont,
+                          style: isDarkMode ? darkModeFont : lightModeFont,
                         ),
                       ),
                     ],
@@ -168,6 +177,7 @@ class _NewGridPageState extends ConsumerState<GridPage> {
       ),
       body: Stack(
         children: [
+          // Display grid
           Padding(
             padding:
                 const EdgeInsets.only(left: 8, right: 8, bottom: 8, top: 0),
@@ -179,6 +189,7 @@ class _NewGridPageState extends ConsumerState<GridPage> {
               ),
               itemCount: count,
               itemBuilder: (context, index) {
+                // Value of each dot in the grid
                 String dot = widget.grid.gridValues[index];
                 return InkWell(
                   borderRadius: widget.grid.shape == "circle"
@@ -187,70 +198,75 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                   onTap: () async {
                     await pop.setAsset('assets/deep.mov');
                     pop.play();
-
-                    for (int i = 0; i < widget.grid.colours.length; i++) {
-                      if (!widget.grid.colours.contains(dot)) {
-                        dot = widget.grid.colours[0];
-                        break;
-                      }
-                      if (dot == widget.grid.colours[i]) {
-                        if (i == widget.grid.colours.length - 1) {
-                          dot = widget.grid.colours[0];
-                          // break;
-                        } else {
-                          if (i + 1 < 7 &&
-                              widget.grid.colours[i + 1] == "none") {
-                            if (i + 2 < 7 &&
-                                widget.grid.colours[i + 2] == "none") {
-                              if (i + 3 < 7 &&
-                                  widget.grid.colours[i + 3] == "none") {
-                                if (i + 4 < 7 &&
-                                    widget.grid.colours[i + 4] == "none") {
-                                  if (i + 5 < 7 &&
-                                      widget.grid.colours[i + 5] == "none") {
-                                    if (i + 6 < 7 &&
-                                        widget.grid.colours[i + 6] == "none") {
-                                      dot = widget.grid.colours[0];
+                    // Determine which colour to cycle to on tap
+                    List colours = widget.grid.colours;
+                    // Cycle through 7 colours
+                    for (int i = 0; i < colours.length; i++) {
+                      // Colour is changed to black in the list of 7 if it is
+                      // disabled
+                      if (colours.contains(dot)) {
+                        // Loop will continue until it finds the current colour
+                        if (dot == colours[i]) {
+                          // Loop back to start of the list (black) if last colour
+                          if (i == colours.length - 1) {
+                            dot = colours[0]; // Change dot to black
+                            break;
+                          } else {
+                            if (i + 1 < 7 && colours[i + 1] == "none") {
+                              if (i + 2 < 7 && colours[i + 2] == "none") {
+                                if (i + 3 < 7 && colours[i + 3] == "none") {
+                                  if (i + 4 < 7 && colours[i + 4] == "none") {
+                                    if (i + 5 < 7 && colours[i + 5] == "none") {
+                                      if (i + 6 < 7 &&
+                                          colours[i + 6] == "none") {
+                                        dot = colours[0];
+                                      } else {
+                                        i + 6 < 7
+                                            ? dot = colours[i + 6]
+                                            : dot = colours[0];
+                                      }
                                     } else {
-                                      i + 6 < 7
-                                          ? dot = widget.grid.colours[i + 6]
-                                          : dot = widget.grid.colours[0];
+                                      i + 5 < 7
+                                          ? dot = colours[i + 5]
+                                          : dot = colours[0];
                                     }
                                   } else {
-                                    i + 5 < 7
-                                        ? dot = widget.grid.colours[i + 5]
-                                        : dot = widget.grid.colours[0];
+                                    i + 4 < 7
+                                        ? dot = colours[i + 4]
+                                        : dot = colours[0];
                                   }
                                 } else {
-                                  i + 4 < 7
-                                      ? dot = widget.grid.colours[i + 4]
-                                      : dot = widget.grid.colours[0];
+                                  i + 3 < 7
+                                      ? dot = colours[i + 3]
+                                      : dot = colours[0];
                                 }
                               } else {
-                                i + 3 < 7
-                                    ? dot = widget.grid.colours[i + 3]
-                                    : dot = widget.grid.colours[0];
+                                i + 2 < 7
+                                    ? dot = colours[i + 2]
+                                    : dot = colours[0];
                               }
                             } else {
-                              i + 2 < 7
-                                  ? dot = widget.grid.colours[i + 2]
-                                  : dot = widget.grid.colours[0];
+                              i + 1 < 7
+                                  ? dot = colours[i + 1]
+                                  : dot = colours[0];
                             }
-                          } else {
-                            i + 1 < 7
-                                ? dot = widget.grid.colours[i + 1]
-                                : dot = widget.grid.colours[0];
+                            break;
                           }
-                          break;
                         }
+                      } else {
+                        // Change dot to black if its colour is disabled
+                        dot = colours[0];
+                        break;
                       }
                     }
+                    // Update grid value
                     setState(() {
                       widget.grid.gridValues[index] = dot;
                     });
                   },
                   child: Container(
                     decoration: BoxDecoration(
+                      // Border around each dot if not filled
                       border: Border.all(
                         color: dot == "black"
                             ? isDarkMode
@@ -259,9 +275,11 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                             : Colors.transparent,
                         width: 1,
                       ),
+                      // Fill colour of each dot
                       color: dot == "black"
                           ? Colors.transparent
                           : colourConverter.getColourFromString(dot),
+                      // Circle or square
                       borderRadius: widget.grid.shape == 'circle'
                           ? BorderRadius.circular(64)
                           : BorderRadius.circular(4),
@@ -271,9 +289,11 @@ class _NewGridPageState extends ConsumerState<GridPage> {
               },
             ),
           ),
+          // Toolbar
           AnimatedContainer(
             duration: const Duration(milliseconds: 500),
             child: Align(
+              // Moveable toolbar
               alignment:
                   barIsBottom ? Alignment.bottomCenter : Alignment.topCenter,
               child: Padding(
@@ -294,6 +314,7 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
+                        // Enable/ disable colours
                         BottomNavBarMenuWidget(
                           icon: Icons.palette,
                           onTap: () async {
@@ -368,8 +389,8 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                                             Text(
                                               "Green",
                                               style: isDarkMode
-                                                  ? darkFont
-                                                  : lightFont,
+                                                  ? darkModeFont
+                                                  : lightModeFont,
                                             ),
                                           ],
                                         ),
@@ -417,8 +438,8 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                                             Text(
                                               "Red",
                                               style: isDarkMode
-                                                  ? darkFont
-                                                  : lightFont,
+                                                  ? darkModeFont
+                                                  : lightModeFont,
                                             ),
                                           ],
                                         ),
@@ -466,8 +487,8 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                                             Text(
                                               "Blue",
                                               style: isDarkMode
-                                                  ? darkFont
-                                                  : lightFont,
+                                                  ? darkModeFont
+                                                  : lightModeFont,
                                             ),
                                           ],
                                         ),
@@ -516,8 +537,8 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                                             Text(
                                               "Yellow",
                                               style: isDarkMode
-                                                  ? darkFont
-                                                  : lightFont,
+                                                  ? darkModeFont
+                                                  : lightModeFont,
                                             ),
                                           ],
                                         ),
@@ -565,8 +586,8 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                                             Text(
                                               "Pink",
                                               style: isDarkMode
-                                                  ? darkFont
-                                                  : lightFont,
+                                                  ? darkModeFont
+                                                  : lightModeFont,
                                             ),
                                           ],
                                         ),
@@ -615,8 +636,8 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                                             Text(
                                               "Orange",
                                               style: isDarkMode
-                                                  ? darkFont
-                                                  : lightFont,
+                                                  ? darkModeFont
+                                                  : lightModeFont,
                                             ),
                                           ],
                                         ),
@@ -633,8 +654,9 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                                         },
                                         child: Text(
                                           "Done",
-                                          style:
-                                              isDarkMode ? darkFont : lightFont,
+                                          style: isDarkMode
+                                              ? darkModeFont
+                                              : lightModeFont,
                                         ),
                                       ),
                                     ],
@@ -662,8 +684,8 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                                             Text(
                                               'x: ${widget.grid.x.toString()}',
                                               style: isDarkMode
-                                                  ? darkFont
-                                                  : lightFont,
+                                                  ? darkModeFont
+                                                  : lightModeFont,
                                             ),
                                             Slider(
                                               label: widget.grid.x.toString(),
@@ -682,14 +704,13 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                                             Text(
                                               'y: ${widget.grid.y.toString()}',
                                               style: isDarkMode
-                                                  ? darkFont
-                                                  : lightFont,
+                                                  ? darkModeFont
+                                                  : lightModeFont,
                                             ),
                                             Slider(
                                               label: widget.grid.y.toString(),
                                               min: 1,
-                                              max:
-                                                  260, // 10 years with 14 across
+                                              max: 104,
                                               value: widget.grid.y.toDouble(),
                                               onChanged: (value) {
                                                 setState(() {
@@ -716,8 +737,8 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                                             child: Text(
                                               "Done",
                                               style: isDarkMode
-                                                  ? darkFont
-                                                  : lightFont,
+                                                  ? darkModeFont
+                                                  : lightModeFont,
                                             ),
                                           )
                                         ],
@@ -730,7 +751,7 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                           onTap: () async {
                             await clicker.setAsset('assets/click.mov');
                             clicker.play();
-                            final updatedGrid = GridModel(
+                            final updatedGrid = Grid(
                               gridID: widget.gridID,
                               title: titleController.text,
                               dateModified: DateTime.now().toString(),
@@ -752,8 +773,8 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                                             child: Text(
                                               "Dismiss",
                                               style: isDarkMode
-                                                  ? darkFont
-                                                  : lightFont,
+                                                  ? darkModeFont
+                                                  : lightModeFont,
                                             ),
                                             onPressed: () async {
                                               await clicker

@@ -1,30 +1,23 @@
 import 'package:beamer/beamer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:just_audio/just_audio.dart';
 
-import '/controller/constants/constants.dart';
-import '/controller/state_management/providers.dart';
-import '/data/model/user_model.dart';
+import '../../../config/constants.dart';
+import '../../../logic/providers/providers.dart';
+import '../../../data/models/user_model.dart';
 import '../../widgets/login_field_widget.dart';
 
-final _url = Uri.parse('https://oxygentech.com.au');
+class SignUpView extends ConsumerStatefulWidget {
+  /// UI for signing up
 
-Future<void> _launchUrl() async {
-  if (!await launchUrl(_url)) {
-    throw 'Could not launch $_url';
-  }
-}
-
-class SignUpPage extends ConsumerStatefulWidget {
-  const SignUpPage({super.key});
+  const SignUpView({super.key});
 
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() => _SignUpPageState();
+  ConsumerState<ConsumerStatefulWidget> createState() => _SignUpViewState();
 }
 
-class _SignUpPageState extends ConsumerState<SignUpPage> {
+class _SignUpViewState extends ConsumerState<SignUpView> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
@@ -48,28 +41,12 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
   @override
   Widget build(BuildContext context) {
     final db = ref.read(firestore);
-    final auth = ref.read(firebaseAuth);
+    final auth = ref.read(authentication);
     final isDarkMode = ref.watch(darkMode);
     final validate = ref.watch(validation);
+    final urlLauncher = ref.read(url);
     final logo = isDarkMode ? 'images/grids.png' : 'images/grids_light.png';
-    final mediaWidth = MediaQuery.of(context).size.width;
-
-    void showMessage(String message) {
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-            title: Center(
-              child: Text(
-                message,
-                style: isDarkMode ? darkLargeFont : lightLargeFont,
-              ),
-            ),
-          );
-        },
-      );
-    }
+    final mediaWidth = MediaQuery.sizeOf(context).width;
 
     return Scaffold(
       body: Center(
@@ -77,7 +54,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              const SizedBox(height: 60),
+              // Logo
               Center(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(32),
@@ -96,21 +73,21 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                     hintText: 'Name',
                     mediaWidth: mediaWidth,
                   ),
-                  const SizedBox(height: 10),
+                  gapH10,
                   LoginFieldWidget(
                     textController: _emailController,
                     obscurePassword: false,
                     hintText: 'Email',
                     mediaWidth: mediaWidth,
                   ),
-                  const SizedBox(height: 10),
+                  gapH10,
                   LoginFieldWidget(
                     textController: _passwordController,
                     obscurePassword: true,
                     hintText: 'Password',
                     mediaWidth: mediaWidth,
                   ),
-                  const SizedBox(height: 10),
+                  gapH10,
                   SizedBox(
                     width: mediaWidth * 0.8,
                     height: 60,
@@ -123,6 +100,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                       onPressed: () async {
                         await clicker.setAsset('assets/click.mov');
                         clicker.play();
+                        // Show loading dialog
                         showDialog(
                           // ignore: use_build_context_synchronously
                           context: context,
@@ -136,6 +114,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                           },
                         );
                         try {
+                          // Validate inputs
                           validate.validateName(_nameController.text.trim()) !=
                                   null
                               ? throw 'Name is required'
@@ -150,34 +129,41 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                                   null
                               ? throw 'Password must be at least 6 characters'
                               : null;
+                          // Sign up
                           await auth.signUp(
                             email: _emailController.text.trim(),
                             password: _passwordController.text.trim(),
                           );
+                          // Create user object
                           final user = UserModel(
                             id: auth.user!.uid,
                             email: _emailController.text.trim(),
                             name: _nameController.text.trim(),
                           );
+                          // Add user to database
                           await db.addUser(user: user);
+                          // Pop loading dialog
                           //ignore: use_build_context_synchronously
                           Navigator.pop(context);
-                          showMessage("User created!");
+                          // ignore: use_build_context_synchronously
+                          showMessage("User created!", context, isDarkMode);
                           //ignore: use_build_context_synchronously
                           Beamer.of(context).beamToNamed('/grids');
                         } catch (e) {
+                          // Pop loading dialog
                           // ignore: use_build_context_synchronously
                           Navigator.pop(context);
-                          showMessage(e.toString());
+                          // ignore: use_build_context_synchronously
+                          showMessage(e.toString(), context, isDarkMode);
                         }
                       },
                       child: Text(
                         'Sign Up',
-                        style: isDarkMode ? lightFont : darkFont,
+                        style: isDarkMode ? lightModeFont : darkModeFont,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  gapH20,
                   TextButton(
                     onPressed: () async {
                       await clicker.setAsset('assets/click.mov');
@@ -187,10 +173,12 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                     },
                     child: Text(
                       'Sign In',
-                      style: isDarkMode ? darkSmallFont : lightSmallFont,
+                      style:
+                          isDarkMode ? darkModeSmallFont : lightModeSmallFont,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  gapH10,
+                  // Logo to launch O2Tech website
                   Padding(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
@@ -206,10 +194,10 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                         onTap: () async {
                           await clicker.setAsset('assets/click.mov');
                           clicker.play();
-                          _launchUrl();
+                          urlLauncher.launchO2Tech();
                         }),
                   ),
-                  const SizedBox(height: 20),
+                  gapH20,
                 ],
               ),
             ],

@@ -1,30 +1,23 @@
 import 'package:beamer/beamer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:just_audio/just_audio.dart';
 
-import '/controller/constants/constants.dart';
-import '/controller/state_management/providers.dart';
+import '../../../config/constants.dart';
+import '../../../logic/providers/providers.dart';
 import '../../widgets/login_field_widget.dart';
 
-final _url = Uri.parse('https://oxygentech.com.au');
+class ForgotPasswordView extends ConsumerStatefulWidget {
+  /// UI for resetting password
 
-Future<void> _launchUrl() async {
-  if (!await launchUrl(_url)) {
-    throw 'Could not launch $_url';
-  }
-}
-
-class ForgotPasswordPage extends ConsumerStatefulWidget {
-  const ForgotPasswordPage({super.key});
+  const ForgotPasswordView({super.key});
 
   @override
   ConsumerState<ConsumerStatefulWidget> createState() =>
-      _ForgotPasswordPageWidgetState();
+      _ForgotPasswordViewWidgetState();
 }
 
-class _ForgotPasswordPageWidgetState extends ConsumerState<ForgotPasswordPage> {
+class _ForgotPasswordViewWidgetState extends ConsumerState<ForgotPasswordView> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   late AudioPlayer clicker = AudioPlayer();
@@ -45,26 +38,10 @@ class _ForgotPasswordPageWidgetState extends ConsumerState<ForgotPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = ref.read(firebaseAuth);
-    final mediaWidth = MediaQuery.of(context).size.width;
+    final auth = ref.read(authentication);
+    final mediaWidth = MediaQuery.sizeOf(context).width;
+    final urlLauncher = ref.read(url);
     final isDarkMode = ref.watch(darkMode);
-
-    void showMessage(String message) {
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-            title: Center(
-              child: Text(
-                message,
-                style: isDarkMode ? darkLargeFont : lightLargeFont,
-              ),
-            ),
-          );
-        },
-      );
-    }
 
     return Scaffold(
       appBar: AppBar(
@@ -90,17 +67,17 @@ class _ForgotPasswordPageWidgetState extends ConsumerState<ForgotPasswordPage> {
             children: [
               Text(
                 'Receive an email to\nreset your password',
-                style: isDarkMode ? darkLargeFont : lightLargeFont,
+                style: isDarkMode ? darkModeLargeFont : lightModeLargeFont,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 20),
+              gapH20,
               LoginFieldWidget(
                 textController: _emailController,
                 obscurePassword: false,
                 hintText: 'Email',
                 mediaWidth: mediaWidth,
               ),
-              const SizedBox(height: 10),
+              gapH10,
               SizedBox(
                 width: mediaWidth * 0.8,
                 height: 60,
@@ -129,22 +106,30 @@ class _ForgotPasswordPageWidgetState extends ConsumerState<ForgotPasswordPage> {
                       await auth.resetPassword(
                         email: _emailController.text.trim(),
                       );
+                      // Pop loading dialog
                       // ignore: use_build_context_synchronously
                       Navigator.pop(context);
-                      showMessage('Check your email to reset your password');
+                      showMessage(
+                        'Check your email to reset your password',
+                        // ignore: use_build_context_synchronously
+                        context,
+                        isDarkMode,
+                      );
                     } catch (e) {
+                      // Pop loading dialog
                       // ignore: use_build_context_synchronously
                       Navigator.pop(context);
-                      showMessage(e.toString());
+                      // ignore: use_build_context_synchronously
+                      showMessage(e.toString(), context, isDarkMode);
                     }
                   },
                   child: Text(
                     'Reset Password',
-                    style: isDarkMode ? lightFont : darkFont,
+                    style: isDarkMode ? lightModeFont : darkModeFont,
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              gapH20,
               TextButton(
                 onPressed: () async {
                   await clicker.setAsset('assets/click.mov');
@@ -154,10 +139,10 @@ class _ForgotPasswordPageWidgetState extends ConsumerState<ForgotPasswordPage> {
                 },
                 child: Text(
                   'Sign In',
-                  style: isDarkMode ? darkSmallFont : lightSmallFont,
+                  style: isDarkMode ? darkModeSmallFont : lightModeSmallFont,
                 ),
               ),
-              const SizedBox(height: 10),
+              gapH10,
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
                 child: InkWell(
@@ -172,10 +157,10 @@ class _ForgotPasswordPageWidgetState extends ConsumerState<ForgotPasswordPage> {
                     onTap: () async {
                       await clicker.setAsset('assets/click.mov');
                       clicker.play();
-                      _launchUrl();
+                      urlLauncher.launchO2Tech();
                     }),
               ),
-              const SizedBox(height: 20),
+              gapH20,
             ],
           ),
         ),
