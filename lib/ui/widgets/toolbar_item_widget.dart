@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../logic/providers/providers.dart';
 
-class BottomNavBarMenuWidget extends ConsumerStatefulWidget {
+class ToolbarItemWidget extends ConsumerStatefulWidget {
+  /// Widget to sit in bottom toolbar on grid page
+
   final IconData icon;
   final Function onTap;
 
-  const BottomNavBarMenuWidget({
+  const ToolbarItemWidget({
     super.key,
     required this.icon,
     required this.onTap,
@@ -15,19 +17,20 @@ class BottomNavBarMenuWidget extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<ConsumerStatefulWidget> createState() =>
-      _BottomNavBarMenuWidgetState();
+      _ToolbarItemWidgetState();
 }
 
-class _BottomNavBarMenuWidgetState
-    extends ConsumerState<BottomNavBarMenuWidget> {
+class _ToolbarItemWidgetState extends ConsumerState<ToolbarItemWidget> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = ref.watch(darkMode);
     return InkWell(
       borderRadius: BorderRadius.circular(24),
       child: SizedBox(
-        width: MediaQuery.of(context).size.width / 5 - 48,
+        // 1/5 of screen width - 48 padding
+        width: MediaQuery.sizeOf(context).width / 5 - 48,
         child: Column(
+          // Centre vertically in toolbar
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(

@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 
-import '../widgets/glass_morphism.dart';
 import '../../config/constants.dart';
 import '../../logic/providers/providers.dart';
 import '../../logic/services/colour_conversion.dart';
 import '../../data/models/grid_model.dart';
-import '../widgets/bottom_nav_bar_menu_widget.dart';
+import '../widgets/glass_morphism.dart';
+import '../widgets/toolbar_item_widget.dart';
 import '../widgets/custom_dialog_widget.dart';
+import '../widgets/colour_checkbox_widget.dart';
 
 class GridPage extends ConsumerStatefulWidget {
   /// Display a [grid] - called GridPage rather than GridView to avoid conflict
@@ -33,12 +34,12 @@ class _NewGridPageState extends ConsumerState<GridPage> {
   late TextEditingController titleController;
   final colourConverter = ColourConversion();
 
-  late bool greenIsChecked;
-  late bool redIsChecked;
-  late bool blueIsChecked;
-  late bool yellowIsChecked;
-  late bool pinkIsChecked;
-  late bool orangeIsChecked;
+  late bool greenIsEnabled;
+  late bool redIsEnabled;
+  late bool blueIsEnabled;
+  late bool yellowIsEnabled;
+  late bool pinkIsEnabled;
+  late bool orangeIsEnabled;
 
   @override
   void initState() {
@@ -189,74 +190,39 @@ class _NewGridPageState extends ConsumerState<GridPage> {
               ),
               itemCount: count,
               itemBuilder: (context, index) {
-                // Value of each dot in the grid
+                // Value of dot of current index
                 String dot = widget.grid.gridValues[index];
                 return InkWell(
                   borderRadius: widget.grid.shape == "circle"
-                      ? BorderRadius.circular(64)
+                      ? BorderRadius.circular(256)
                       : BorderRadius.circular(4),
                   onTap: () async {
                     await pop.setAsset('assets/deep.mov');
                     pop.play();
-                    // Determine which colour to cycle to on tap
+                    // Logic to change colour of dot
+                    // List of colours where disabled colours are "none"
                     List colours = widget.grid.colours;
-                    // Cycle through 7 colours
+                    // Cycle through 7 colours in outerLoop
+                    outerLoop:
                     for (int i = 0; i < colours.length; i++) {
-                      // Colour is changed to black in the list of 7 if it is
-                      // disabled
-                      if (colours.contains(dot)) {
-                        // Loop will continue until it finds the current colour
-                        if (dot == colours[i]) {
-                          // Loop back to start of the list (black) if last colour
-                          if (i == colours.length - 1) {
-                            dot = colours[0]; // Change dot to black
-                            break;
-                          } else {
-                            if (i + 1 < 7 && colours[i + 1] == "none") {
-                              if (i + 2 < 7 && colours[i + 2] == "none") {
-                                if (i + 3 < 7 && colours[i + 3] == "none") {
-                                  if (i + 4 < 7 && colours[i + 4] == "none") {
-                                    if (i + 5 < 7 && colours[i + 5] == "none") {
-                                      if (i + 6 < 7 &&
-                                          colours[i + 6] == "none") {
-                                        dot = colours[0];
-                                      } else {
-                                        i + 6 < 7
-                                            ? dot = colours[i + 6]
-                                            : dot = colours[0];
-                                      }
-                                    } else {
-                                      i + 5 < 7
-                                          ? dot = colours[i + 5]
-                                          : dot = colours[0];
-                                    }
-                                  } else {
-                                    i + 4 < 7
-                                        ? dot = colours[i + 4]
-                                        : dot = colours[0];
-                                  }
-                                } else {
-                                  i + 3 < 7
-                                      ? dot = colours[i + 3]
-                                      : dot = colours[0];
-                                }
-                              } else {
-                                i + 2 < 7
-                                    ? dot = colours[i + 2]
-                                    : dot = colours[0];
-                              }
-                            } else {
-                              i + 1 < 7
-                                  ? dot = colours[i + 1]
-                                  : dot = colours[0];
-                            }
-                            break;
+                      // Find current colour
+                      if (colours[i] == dot) {
+                        // Determine how many disabled colours to skip
+                        for (int j = 1; i + j < colours.length; j++) {
+                          // Skip disabled colours
+                          if (colours[i + j] != "none") {
+                            // Assign the next enabled colour
+                            dot = colours[i + j];
+                            break outerLoop;
                           }
                         }
-                      } else {
-                        // Change dot to black if its colour is disabled
+                        // If no proceeding enabled colours, back to first colour
                         dot = colours[0];
-                        break;
+                        break outerLoop;
+                      } else if (!colours.contains(dot)) {
+                        // If current colour has now been disabled, back to first colour
+                        dot = colours[0];
+                        break outerLoop;
                       }
                     }
                     // Update grid value
@@ -281,7 +247,7 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                           : colourConverter.getColourFromString(dot),
                       // Circle or square
                       borderRadius: widget.grid.shape == 'circle'
-                          ? BorderRadius.circular(64)
+                          ? BorderRadius.circular(256)
                           : BorderRadius.circular(4),
                     ),
                   ),
@@ -314,8 +280,8 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        // Enable/ disable colours
-                        BottomNavBarMenuWidget(
+                        // Enable/ disable colours with checkboxes in dialog
+                        ToolbarItemWidget(
                           icon: Icons.palette,
                           onTap: () async {
                             await clicker.setAsset('assets/click.mov');
@@ -325,321 +291,82 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                               context: context,
                               builder: (context) => StatefulBuilder(
                                 builder: (context, setState) {
-                                  greenIsChecked =
+                                  greenIsEnabled =
                                       widget.grid.colours[1] == "green";
-                                  redIsChecked =
+                                  redIsEnabled =
                                       widget.grid.colours[2] == "red";
-                                  blueIsChecked =
+                                  blueIsEnabled =
                                       widget.grid.colours[3] == "blue";
-                                  yellowIsChecked =
+                                  yellowIsEnabled =
                                       widget.grid.colours[4] == "yellow";
-                                  pinkIsChecked =
+                                  pinkIsEnabled =
                                       widget.grid.colours[5] == "pink";
-                                  orangeIsChecked =
+                                  orangeIsEnabled =
                                       widget.grid.colours[6] == "orange";
                                   return CustomDialogWidget(
                                     dialogHeading: "Select Colours",
                                     dialogContent: Column(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Row(
-                                          children: [
-                                            Checkbox(
-                                                checkColor: Colors.white,
-                                                fillColor:
-                                                    WidgetStateProperty.all(
-                                                        green),
-                                                value: greenIsChecked,
-                                                onChanged: (value) async {
-                                                  await clicker.setAsset(
-                                                      'assets/click.mov');
-                                                  clicker.play();
-                                                  int index = 1;
-                                                  if (greenIsChecked == true) {
-                                                    for (int i = 0;
-                                                        i <
-                                                            widget
-                                                                .grid
-                                                                .gridValues
-                                                                .length;
-                                                        i++) {
-                                                      if (widget.grid
-                                                              .gridValues[i] ==
-                                                          "green") {
-                                                        setState(() {
-                                                          widget.grid
-                                                                  .gridValues[
-                                                              i] = "black";
-                                                        });
-                                                      }
-                                                    }
-                                                    widget.grid.colours[index] =
-                                                        "none";
-                                                  } else {
-                                                    widget.grid.colours[index] =
-                                                        "green";
-                                                  }
-
-                                                  setState(() {
-                                                    greenIsChecked = value!;
-                                                  });
-                                                  await db.updateGrid(
-                                                      grid: widget.grid);
-                                                }),
-                                            Text(
-                                              "Green",
-                                              style: isDarkMode
-                                                  ? darkModeFont
-                                                  : lightModeFont,
-                                            ),
-                                          ],
+                                        ColourCheckboxWidget(
+                                          grid: widget.grid,
+                                          colour: green,
+                                          colourString: "green",
+                                          index: 1,
+                                          clicker: clicker,
+                                          isDarkMode: isDarkMode,
+                                          enabled: greenIsEnabled,
+                                          db: db,
                                         ),
-                                        Row(
-                                          children: [
-                                            Checkbox(
-                                              checkColor: Colors.white,
-                                              fillColor:
-                                                  WidgetStateProperty.all(red),
-                                              value: redIsChecked,
-                                              onChanged: (value) async {
-                                                await clicker.setAsset(
-                                                    'assets/click.mov');
-                                                clicker.play();
-                                                int index = 2;
-                                                if (redIsChecked == true) {
-                                                  for (int i = 0;
-                                                      i <
-                                                          widget.grid.gridValues
-                                                              .length;
-                                                      i++) {
-                                                    if (widget.grid
-                                                            .gridValues[i] ==
-                                                        "red") {
-                                                      setState(() {
-                                                        widget.grid
-                                                                .gridValues[i] =
-                                                            "black";
-                                                      });
-                                                    }
-                                                  }
-                                                  widget.grid.colours[index] =
-                                                      "none";
-                                                } else {
-                                                  widget.grid.colours[index] =
-                                                      "red";
-                                                }
-                                                setState(() {
-                                                  redIsChecked = value!;
-                                                });
-                                                await db.updateGrid(
-                                                    grid: widget.grid);
-                                              },
-                                            ),
-                                            Text(
-                                              "Red",
-                                              style: isDarkMode
-                                                  ? darkModeFont
-                                                  : lightModeFont,
-                                            ),
-                                          ],
+                                        ColourCheckboxWidget(
+                                          grid: widget.grid,
+                                          colour: red,
+                                          colourString: "red",
+                                          index: 2,
+                                          clicker: clicker,
+                                          isDarkMode: isDarkMode,
+                                          enabled: redIsEnabled,
+                                          db: db,
                                         ),
-                                        Row(
-                                          children: [
-                                            Checkbox(
-                                              checkColor: Colors.white,
-                                              fillColor:
-                                                  WidgetStateProperty.all(blue),
-                                              value: blueIsChecked,
-                                              onChanged: (value) async {
-                                                await clicker.setAsset(
-                                                    'assets/click.mov');
-                                                clicker.play();
-                                                int index = 3;
-                                                if (blueIsChecked == true) {
-                                                  for (int i = 0;
-                                                      i <
-                                                          widget.grid.gridValues
-                                                              .length;
-                                                      i++) {
-                                                    if (widget.grid
-                                                            .gridValues[i] ==
-                                                        "blue") {
-                                                      setState(() {
-                                                        widget.grid
-                                                                .gridValues[i] =
-                                                            "black";
-                                                      });
-                                                    }
-                                                  }
-                                                  widget.grid.colours[index] =
-                                                      "none";
-                                                } else {
-                                                  widget.grid.colours[index] =
-                                                      "blue";
-                                                }
-                                                setState(() {
-                                                  blueIsChecked = value!;
-                                                });
-                                                await db.updateGrid(
-                                                    grid: widget.grid);
-                                              },
-                                            ),
-                                            Text(
-                                              "Blue",
-                                              style: isDarkMode
-                                                  ? darkModeFont
-                                                  : lightModeFont,
-                                            ),
-                                          ],
+                                        ColourCheckboxWidget(
+                                          grid: widget.grid,
+                                          colour: blue,
+                                          colourString: "blue",
+                                          index: 3,
+                                          clicker: clicker,
+                                          isDarkMode: isDarkMode,
+                                          enabled: blueIsEnabled,
+                                          db: db,
                                         ),
-                                        Row(
-                                          children: [
-                                            Checkbox(
-                                              checkColor: Colors.white,
-                                              fillColor:
-                                                  WidgetStateProperty.all(
-                                                      yellow),
-                                              value: yellowIsChecked,
-                                              onChanged: (value) async {
-                                                await clicker.setAsset(
-                                                    'assets/click.mov');
-                                                clicker.play();
-                                                int index = 4;
-                                                if (yellowIsChecked == true) {
-                                                  for (int i = 0;
-                                                      i <
-                                                          widget.grid.gridValues
-                                                              .length;
-                                                      i++) {
-                                                    if (widget.grid
-                                                            .gridValues[i] ==
-                                                        "yellow") {
-                                                      setState(() {
-                                                        widget.grid
-                                                                .gridValues[i] =
-                                                            "black";
-                                                      });
-                                                    }
-                                                  }
-                                                  widget.grid.colours[index] =
-                                                      "none";
-                                                } else {
-                                                  widget.grid.colours[index] =
-                                                      "yellow";
-                                                }
-                                                setState(() {
-                                                  yellowIsChecked = value!;
-                                                });
-                                                await db.updateGrid(
-                                                    grid: widget.grid);
-                                              },
-                                            ),
-                                            Text(
-                                              "Yellow",
-                                              style: isDarkMode
-                                                  ? darkModeFont
-                                                  : lightModeFont,
-                                            ),
-                                          ],
+                                        ColourCheckboxWidget(
+                                          grid: widget.grid,
+                                          colour: yellow,
+                                          colourString: "yellow",
+                                          index: 4,
+                                          clicker: clicker,
+                                          isDarkMode: isDarkMode,
+                                          enabled: yellowIsEnabled,
+                                          db: db,
                                         ),
-                                        Row(
-                                          children: [
-                                            Checkbox(
-                                              checkColor: Colors.white,
-                                              fillColor:
-                                                  WidgetStateProperty.all(pink),
-                                              value: pinkIsChecked,
-                                              onChanged: (value) async {
-                                                await clicker.setAsset(
-                                                    'assets/click.mov');
-                                                clicker.play();
-                                                int index = 5;
-                                                if (pinkIsChecked == true) {
-                                                  for (int i = 0;
-                                                      i <
-                                                          widget.grid.gridValues
-                                                              .length;
-                                                      i++) {
-                                                    if (widget.grid
-                                                            .gridValues[i] ==
-                                                        "pink") {
-                                                      setState(() {
-                                                        widget.grid
-                                                                .gridValues[i] =
-                                                            "black";
-                                                      });
-                                                    }
-                                                  }
-                                                  widget.grid.colours[index] =
-                                                      "none";
-                                                } else {
-                                                  widget.grid.colours[index] =
-                                                      "pink";
-                                                }
-                                                setState(() {
-                                                  pinkIsChecked = value!;
-                                                });
-                                                await db.updateGrid(
-                                                    grid: widget.grid);
-                                              },
-                                            ),
-                                            Text(
-                                              "Pink",
-                                              style: isDarkMode
-                                                  ? darkModeFont
-                                                  : lightModeFont,
-                                            ),
-                                          ],
+                                        ColourCheckboxWidget(
+                                          grid: widget.grid,
+                                          colour: pink,
+                                          colourString: "pink",
+                                          index: 5,
+                                          clicker: clicker,
+                                          isDarkMode: isDarkMode,
+                                          enabled: pinkIsEnabled,
+                                          db: db,
                                         ),
-                                        Row(
-                                          children: [
-                                            Checkbox(
-                                              checkColor: Colors.white,
-                                              fillColor:
-                                                  WidgetStateProperty.all(
-                                                      orange),
-                                              value: orangeIsChecked,
-                                              onChanged: (value) async {
-                                                await clicker.setAsset(
-                                                    'assets/click.mov');
-                                                clicker.play();
-                                                int index = 6;
-                                                if (orangeIsChecked == true) {
-                                                  for (int i = 0;
-                                                      i <
-                                                          widget.grid.gridValues
-                                                              .length;
-                                                      i++) {
-                                                    if (widget.grid
-                                                            .gridValues[i] ==
-                                                        "orange") {
-                                                      setState(() {
-                                                        widget.grid
-                                                                .gridValues[i] =
-                                                            "black";
-                                                      });
-                                                    }
-                                                  }
-                                                  widget.grid.colours[index] =
-                                                      "none";
-                                                } else {
-                                                  widget.grid.colours[index] =
-                                                      "orange";
-                                                }
-                                                setState(() {
-                                                  orangeIsChecked = value!;
-                                                });
-                                                await db.updateGrid(
-                                                    grid: widget.grid);
-                                              },
-                                            ),
-                                            Text(
-                                              "Orange",
-                                              style: isDarkMode
-                                                  ? darkModeFont
-                                                  : lightModeFont,
-                                            ),
-                                          ],
+                                        ColourCheckboxWidget(
+                                          grid: widget.grid,
+                                          colour: orange,
+                                          colourString: "orange",
+                                          index: 6,
+                                          clicker: clicker,
+                                          isDarkMode: isDarkMode,
+                                          enabled: orangeIsEnabled,
+                                          db: db,
                                         ),
                                       ],
                                     ),
@@ -666,91 +393,102 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                             );
                           },
                         ),
-                        BottomNavBarMenuWidget(
+                        // Adjust the scale of the grid (x rows and y columns)
+                        // in a dialog
+                        ToolbarItemWidget(
                           icon: Icons.height,
                           onTap: () async {
                             await clicker.setAsset('assets/click.mov');
                             clicker.play();
                             showDialog(
-                                // ignore: use_build_context_synchronously
-                                context: context,
-                                builder: (context) => StatefulBuilder(
-                                        builder: (context, setState) {
-                                      return CustomDialogWidget(
-                                        dialogHeading: "Adjust Scale",
-                                        dialogContent: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              'x: ${widget.grid.x.toString()}',
-                                              style: isDarkMode
-                                                  ? darkModeFont
-                                                  : lightModeFont,
-                                            ),
-                                            Slider(
-                                              label: widget.grid.x.toString(),
-                                              min: 3,
-                                              max: 14,
-                                              value: widget.grid.x.toDouble(),
-                                              onChanged: (value) {
-                                                setState(() {
-                                                  widget.grid.x = value.toInt();
-                                                  ref
-                                                      .read(xProvider.notifier)
-                                                      .state = widget.grid.x;
-                                                });
-                                              },
-                                            ),
-                                            Text(
-                                              'y: ${widget.grid.y.toString()}',
-                                              style: isDarkMode
-                                                  ? darkModeFont
-                                                  : lightModeFont,
-                                            ),
-                                            Slider(
-                                              label: widget.grid.y.toString(),
-                                              min: 1,
-                                              max: 104,
-                                              value: widget.grid.y.toDouble(),
-                                              onChanged: (value) {
-                                                setState(() {
-                                                  widget.grid.y = value.toInt();
-                                                  ref
-                                                      .read(yProvider.notifier)
-                                                      .state = widget.grid.y;
-                                                });
-                                              },
-                                            ),
-                                          ],
+                              // ignore: use_build_context_synchronously
+                              context: context,
+                              builder: (context) => StatefulBuilder(
+                                builder: (context, setState) {
+                                  return CustomDialogWidget(
+                                    dialogHeading: "Adjust Scale",
+                                    dialogContent: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        // Display number of rows (x)
+                                        Text(
+                                          'x: ${widget.grid.x.toString()}',
+                                          style: isDarkMode
+                                              ? darkModeFont
+                                              : lightModeFont,
                                         ),
-                                        dialogActions: [
-                                          TextButton(
-                                            onPressed: () async {
-                                              await clicker
-                                                  .setAsset('assets/click.mov');
-                                              clicker.play();
-                                              await db.updateGrid(
-                                                  grid: widget.grid);
-                                              // ignore: use_build_context_synchronously
-                                              Navigator.pop(context);
-                                            },
-                                            child: Text(
-                                              "Done",
-                                              style: isDarkMode
-                                                  ? darkModeFont
-                                                  : lightModeFont,
-                                            ),
-                                          )
-                                        ],
-                                      );
-                                    }));
+                                        // Adjust number of rows (x)
+                                        Slider(
+                                          label: widget.grid.x.toString(),
+                                          min: 3,
+                                          max: 14, // fortnight
+                                          value: widget.grid.x.toDouble(),
+                                          onChanged: (value) {
+                                            setState(() {
+                                              widget.grid.x = value.toInt();
+                                              ref
+                                                  .read(xProvider.notifier)
+                                                  .state = widget.grid.x;
+                                            });
+                                          },
+                                        ),
+                                        // Display number of columns (y)
+                                        Text(
+                                          'y: ${widget.grid.y.toString()}',
+                                          style: isDarkMode
+                                              ? darkModeFont
+                                              : lightModeFont,
+                                        ),
+                                        // Adjust number of columns (y)
+                                        Slider(
+                                          label: widget.grid.y.toString(),
+                                          min: 1,
+                                          max: 104, // max 4 years of
+                                          // fortnights
+                                          value: widget.grid.y.toDouble(),
+                                          onChanged: (value) {
+                                            setState(() {
+                                              widget.grid.y = value.toInt();
+                                              ref
+                                                  .read(yProvider.notifier)
+                                                  .state = widget.grid.y;
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                    dialogActions: [
+                                      TextButton(
+                                        onPressed: () async {
+                                          await clicker
+                                              .setAsset('assets/click.mov');
+                                          clicker.play();
+                                          await db.updateGrid(
+                                              grid: widget.grid);
+                                          // ignore: use_build_context_synchronously
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                          "Done",
+                                          style: isDarkMode
+                                              ? darkModeFont
+                                              : lightModeFont,
+                                        ),
+                                      )
+                                    ],
+                                  );
+                                },
+                              ),
+                            );
                           },
                         ),
-                        BottomNavBarMenuWidget(
+                        // Save the grid
+                        ToolbarItemWidget(
                           icon: Icons.save,
                           onTap: () async {
                             await clicker.setAsset('assets/click.mov');
                             clicker.play();
+                            // Create updated grid object
                             final updatedGrid = Grid(
                               gridID: widget.gridID,
                               title: titleController.text,
@@ -761,37 +499,44 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                               shape: widget.grid.shape,
                               gridValues: widget.grid.gridValues,
                             );
+                            // Update grid in Firestore
                             await db.updateGrid(grid: updatedGrid);
+                            // Confirm save
                             showDialog(
-                                // ignore: use_build_context_synchronously
-                                context: context,
-                                builder: (context) {
-                                  return CustomDialogWidget(
-                                      dialogHeading: "Saved!",
-                                      dialogActions: [
-                                        TextButton(
-                                            child: Text(
-                                              "Dismiss",
-                                              style: isDarkMode
-                                                  ? darkModeFont
-                                                  : lightModeFont,
-                                            ),
-                                            onPressed: () async {
-                                              await clicker
-                                                  .setAsset('assets/click.mov');
-                                              clicker.play();
-                                              // ignore: use_build_context_synchronously
-                                              Navigator.pop(context);
-                                            })
-                                      ]);
-                                });
+                              // ignore: use_build_context_synchronously
+                              context: context,
+                              builder: (context) {
+                                return CustomDialogWidget(
+                                  dialogHeading: "Saved!",
+                                  dialogActions: [
+                                    TextButton(
+                                        child: Text(
+                                          "Dismiss",
+                                          style: isDarkMode
+                                              ? darkModeFont
+                                              : lightModeFont,
+                                        ),
+                                        onPressed: () async {
+                                          await clicker
+                                              .setAsset('assets/click.mov');
+                                          clicker.play();
+                                          // ignore: use_build_context_synchronously
+                                          Navigator.pop(context);
+                                        })
+                                  ],
+                                );
+                              },
+                            );
                           },
                         ),
-                        BottomNavBarMenuWidget(
+                        // Change shape of dots from circle to square or vice versa
+                        ToolbarItemWidget(
+                          // Icon to be square if dots are circle, and vice versa
                           icon: widget.grid.shape == 'circle'
                               ? Icons.square_outlined
                               : Icons.circle_outlined,
                           onTap: () async {
+                            // Toggle between circle and square
                             if (widget.grid.shape == 'circle') {
                               await multiPopUp
                                   .setAsset('assets/multi_pop_up.mov');
@@ -809,7 +554,8 @@ class _NewGridPageState extends ConsumerState<GridPage> {
                             }
                           },
                         ),
-                        BottomNavBarMenuWidget(
+                        // Change the position of the toolbar (top or bottom)
+                        ToolbarItemWidget(
                           icon: Icons.swap_vert,
                           onTap: () async {
                             await clicker.setAsset('assets/click.mov');

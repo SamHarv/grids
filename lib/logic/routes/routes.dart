@@ -24,7 +24,7 @@ final routerDelegate = BeamerDelegate(
           key: ValueKey('home'),
           type: BeamPageType.noTransition,
           title: 'grids.',
-          child: GridsPage(),
+          child: GridsView(),
         );
       },
       '/grid': (context, state, data) {

@@ -5,7 +5,7 @@ import 'package:just_audio/just_audio.dart';
 
 import '../../../config/constants.dart';
 import '../../../logic/providers/providers.dart';
-import '../../widgets/login_field_widget.dart';
+import '../../widgets/auth_field_widget.dart';
 
 class ForgotPasswordView extends ConsumerStatefulWidget {
   /// UI for resetting password
@@ -71,7 +71,7 @@ class _ForgotPasswordViewWidgetState extends ConsumerState<ForgotPasswordView> {
                 textAlign: TextAlign.center,
               ),
               gapH20,
-              LoginFieldWidget(
+              AuthFieldWidget(
                 textController: _emailController,
                 obscurePassword: false,
                 hintText: 'Email',

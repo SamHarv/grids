@@ -5,13 +5,15 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../config/constants.dart';
 import '../../logic/providers/providers.dart';
 
-class LoginFieldWidget extends ConsumerWidget {
+class AuthFieldWidget extends ConsumerWidget {
+  /// A custom text field widget for the auth fields
+
   final TextEditingController textController;
   final bool obscurePassword;
   final String hintText;
   final double mediaWidth;
 
-  const LoginFieldWidget({
+  const AuthFieldWidget({
     super.key,
     required this.textController,
     required this.obscurePassword,

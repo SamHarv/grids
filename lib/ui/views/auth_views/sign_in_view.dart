@@ -6,7 +6,7 @@ import 'package:just_audio/just_audio.dart';
 
 import '../../../config/constants.dart';
 import '../../../logic/providers/providers.dart';
-import '../../widgets/login_field_widget.dart';
+import '../../widgets/auth_field_widget.dart';
 
 class SignInView extends ConsumerStatefulWidget {
   /// UI for signing in
@@ -77,14 +77,14 @@ class _SignInViewState extends ConsumerState<SignInView> {
               ),
               Column(
                 children: [
-                  LoginFieldWidget(
+                  AuthFieldWidget(
                     textController: _emailController,
                     obscurePassword: false,
                     hintText: 'Email',
                     mediaWidth: mediaWidth,
                   ),
                   gapH10,
-                  LoginFieldWidget(
+                  AuthFieldWidget(
                     textController: _passwordController,
                     obscurePassword: true,
                     hintText: 'Password',

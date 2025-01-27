@@ -3,6 +3,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class GlassMorphism extends StatelessWidget {
+  /// A widget that applies a glassmorphism effect to its child.
+
   const GlassMorphism({
     super.key,
     required this.child,

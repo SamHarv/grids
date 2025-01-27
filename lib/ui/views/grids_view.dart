@@ -2,9 +2,7 @@ import 'package:beamer/beamer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-// import 'package:metaballs/metaballs.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -13,24 +11,18 @@ import '../../config/constants.dart';
 import '../../logic/providers/providers.dart';
 import '../../data/models/grid_model.dart';
 
-final _url = Uri.parse('https://oxygentech.com.au');
+class GridsView extends ConsumerStatefulWidget {
+  /// UI to display all grids for user
 
-Future<void> _launchUrl() async {
-  if (!await launchUrl(_url)) {
-    throw 'Could not launch $_url';
-  }
-}
-
-class GridsPage extends ConsumerStatefulWidget {
-  const GridsPage({super.key});
+  const GridsView({super.key});
 
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() => _GridsPageState();
+  ConsumerState<ConsumerStatefulWidget> createState() => _GridsViewState();
 }
 
-class _GridsPageState extends ConsumerState<GridsPage>
+class _GridsViewState extends ConsumerState<GridsView>
     with TickerProviderStateMixin {
-  late SharedPreferences _prefs;
+  late SharedPreferences _prefs; // SharedPreferences to manage dark/ light mode
   late AudioPlayer clicker = AudioPlayer();
   late AudioPlayer multiPop = AudioPlayer();
 
@@ -49,11 +41,13 @@ class _GridsPageState extends ConsumerState<GridsPage>
     super.dispose();
   }
 
+  // Initialise SharedPreferences
   Future<void> _initSharedPreferences() async {
     _prefs = await SharedPreferences.getInstance();
     _loadDarkMode();
   }
 
+  // Load dark mode from SharedPreferences
   void _loadDarkMode() {
     final isDarkMode = _prefs.getBool('darkMode') ?? true;
     ref.read(darkMode.notifier).state = isDarkMode;
@@ -61,11 +55,13 @@ class _GridsPageState extends ConsumerState<GridsPage>
 
   @override
   Widget build(BuildContext context) {
-    final mediaWidth = MediaQuery.of(context).size.width;
+    final mediaWidth = MediaQuery.sizeOf(context).width;
     final db = ref.read(firestore);
     final isDarkMode = ref.watch(darkMode);
+    final urlLauncher = ref.read(url);
     final logo = isDarkMode ? 'images/grids.png' : 'images/grids_light.png';
 
+    // Get all grids for user from Firestore
     Future<List<Grid>> getGrids() async {
       final grids = await db.getGrids();
       return grids;
@@ -74,6 +70,7 @@ class _GridsPageState extends ConsumerState<GridsPage>
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
+        // Toggle dark/ light mode
         leading: IconButton(
           iconSize: 24,
           color: isDarkMode ? white : Colors.black,
@@ -83,7 +80,9 @@ class _GridsPageState extends ConsumerState<GridsPage>
                 ? 'assets/multi_pop_up.mov'
                 : 'assets/multi_pop_down.mov');
             await multiPop.play();
+            // Save dark mode to SharedPreferences
             _prefs.setBool('darkMode', !isDarkMode);
+            // Update dark mode state
             ref.read(darkMode.notifier).state = !isDarkMode;
           },
         ),
@@ -98,6 +97,7 @@ class _GridsPageState extends ConsumerState<GridsPage>
           ),
         ),
         actions: [
+          // Navigate to account view
           IconButton(
             iconSize: 24,
             color: isDarkMode ? Colors.white : Colors.black,
@@ -109,43 +109,31 @@ class _GridsPageState extends ConsumerState<GridsPage>
               Beamer.of(context).beamToNamed('/account');
             },
           ),
+          // O2Tech logo to launch website
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
             child: InkWell(
-                borderRadius: BorderRadius.circular(32),
-                child: Image.asset(
-                  isDarkMode
-                      ? 'images/o2tech_white.png'
-                      : 'images/o2tech_black.png',
-                  fit: BoxFit.contain,
-                  height: 20,
-                ),
-                onTap: () async {
-                  await clicker.setAsset('assets/click.mov');
-                  await clicker.play();
-                  _launchUrl();
-                }),
+              borderRadius: BorderRadius.circular(32),
+              child: Image.asset(
+                isDarkMode
+                    ? 'images/o2tech_white.png'
+                    : 'images/o2tech_black.png',
+                fit: BoxFit.contain,
+                height: 20,
+              ),
+              onTap: () async {
+                await clicker.setAsset('assets/click.mov');
+                await clicker.play();
+                urlLauncher.launchO2Tech(); // Launch O2Tech website
+              },
+            ),
           ),
         ],
       ),
-      body:
-          // Metaballs(
-          // gradient: LinearGradient(colors: [
-          //   isDarkMode ? Colors.teal[900]! : Colors.grey[200]!,
-          //   isDarkMode ? white : Colors.teal[900]!,
-          // ], begin: Alignment.bottomRight, end: Alignment.topLeft),
-          // metaballs: 40,
-          // animationDuration: const Duration(milliseconds: 200),
-          // speedMultiplier: 1,
-          // bounceStiffness: 3,
-          // minBallRadius: 10,
-          // maxBallRadius: 25,
-          // glowRadius: 0.7,
-          // glowIntensity: 0.6,
-          // child:
-          FutureBuilder(
+      body: FutureBuilder(
         future: getGrids(),
         builder: (context, snapshot) {
+          // Loading state
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
               child: CircularProgressIndicator(
@@ -153,6 +141,7 @@ class _GridsPageState extends ConsumerState<GridsPage>
               ),
             );
           }
+          // Display error if any
           if (snapshot.hasError) {
             return Center(
               child: Text(
@@ -164,6 +153,7 @@ class _GridsPageState extends ConsumerState<GridsPage>
             );
           }
           final grids = snapshot.data!;
+          // Display message if no grids found
           if (grids.isEmpty) {
             return Center(
               child: Stack(
@@ -195,12 +185,7 @@ class _GridsPageState extends ConsumerState<GridsPage>
           return Stack(
             children: [
               Padding(
-                padding: const EdgeInsets.only(
-                  left: 8,
-                  right: 8,
-                  top: 0,
-                  bottom: 0,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
                 child: GridView.builder(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: mediaWidth < 750 ? 2 : 3,
@@ -216,9 +201,11 @@ class _GridsPageState extends ConsumerState<GridsPage>
                         borderRadius: const BorderRadius.all(
                           Radius.circular(32),
                         ),
+                        // Navigate to grid page
                         onTap: () async {
                           await clicker.setAsset('assets/click.mov');
                           await clicker.play();
+                          // Set x and y state for grid
                           ref.read(xProvider.notifier).state = grid.x;
                           ref.read(yProvider.notifier).state = grid.y;
                           // ignore: use_build_context_synchronously
@@ -299,23 +286,24 @@ class _GridsPageState extends ConsumerState<GridsPage>
           );
         },
       ),
-      // ),
+      // Create a new grid
       floatingActionButton: FloatingActionButton(
         backgroundColor: isDarkMode ? Colors.white : Colors.teal[900],
         onPressed: () async {
           await clicker.setAsset('assets/click.mov');
           await clicker.play();
+          // Generate a new grid ID
           const uuid = Uuid();
           final gridID = uuid.v4();
-          const colour = "black";
+          // Create new grid object
           final newGrid = Grid(
-            gridID: gridID,
-            title: 'New Grid',
+            gridID: gridID, // Assign generated grid ID
+            title: 'New Grid', // Default title
             dateModified: DateTime.now().toString(),
-            x: 7,
-            y: 52,
+            x: 7, // Default x value (1 week)
+            y: 52, // Default y value (52 weeks)
             colours: [
-              colour,
+              "black",
               "green",
               "red",
               "blue",
@@ -324,11 +312,14 @@ class _GridsPageState extends ConsumerState<GridsPage>
               "orange",
             ],
             shape: 'circle',
-            gridValues: List.filled(5200, "black"),
+            gridValues: List.filled(1456, "black"),
           );
+          // Set x and y state for new grid
           ref.read(xProvider.notifier).state = newGrid.x;
           ref.read(yProvider.notifier).state = newGrid.y;
+          // Add new grid to Firestore
           db.addGrid(grid: newGrid);
+          // Navigate to new grid page
           // ignore: use_build_context_synchronously
           Beamer.of(context).beamToNamed('/grid', data: newGrid);
         },

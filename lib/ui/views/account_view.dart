@@ -7,6 +7,8 @@ import '../../logic/providers/providers.dart';
 import '../../config/constants.dart';
 
 class AccountView extends ConsumerStatefulWidget {
+  /// UI to manage user account
+
   const AccountView({super.key});
 
   @override

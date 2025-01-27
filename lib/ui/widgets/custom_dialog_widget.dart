@@ -5,6 +5,8 @@ import '../../config/constants.dart';
 import '../../logic/providers/providers.dart';
 
 class CustomDialogWidget extends ConsumerWidget {
+  /// Custom dialog widget
+
   final String dialogHeading;
   // Content not limited to text
   final Widget? dialogContent;
