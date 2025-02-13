@@ -1,18 +1,21 @@
-# grids
+# grids.
 
-A new Flutter project.
+Track progress toward your goals.
 
-## Getting Started
+Countdown to a significant event.
 
-This project is a starting point for a Flutter application.
+Create art.
 
-A few resources to get you started if this is your first Flutter project:
+Entertain yourself with a whimsical "pop".
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+This flexible app enables you to customise the colours, dimensions, and shape of your grid template to use grids to achieve your goals.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-# grids
-# grids
+The power of achieving a streak in a new habit or routine is formidable.
+
+With the use of grids., you can achieve your aspirations.
+
+## Supported Platforms
+
+- [iOS](https://apps.apple.com/us/app/grids/id6670527700)
+- [Android](https://play.google.com/store/apps/details?id=com.o2tech.grids)
+- [Web](https://grids-web.web.app/)

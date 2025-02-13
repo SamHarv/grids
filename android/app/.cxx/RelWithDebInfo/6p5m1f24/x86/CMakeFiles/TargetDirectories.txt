@@ -1,0 +1,2 @@
+/Users/samharvey/development/flutter_apps/grids/android/app/.cxx/RelWithDebInfo/6p5m1f24/x86/CMakeFiles/edit_cache.dir
+/Users/samharvey/development/flutter_apps/grids/android/app/.cxx/RelWithDebInfo/6p5m1f24/x86/CMakeFiles/rebuild_cache.dir
